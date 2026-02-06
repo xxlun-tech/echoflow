@@ -1,14 +1,20 @@
 /** Copyright © 2025 Seaward Science. */
 
-#include "grid_map_filters.hpp"
+#include "echoflow/grid_map_filters.hpp"
+#include <grid_map_cv/grid_map_cv.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
 
-NS_HEAD
+#include <limits>
 
-namespace grid_map_filters {
+namespace echoflow
+{
 
-void computeEDTFromIntensity(grid_map::GridMap& map,
-                             const std::string& intensity_layer,
-                             const std::string& distance_layer)
+namespace grid_map_filters
+{
+
+void computeEDTFromIntensity(
+  grid_map::GridMap & map, const std::string & intensity_layer, const std::string & distance_layer)
 {
   if (!map.exists(intensity_layer)) {
     throw std::runtime_error("GridMap does not contain intensity layer");
@@ -20,7 +26,7 @@ void computeEDTFromIntensity(grid_map::GridMap& map,
   // create a binary OpenCV mask where occupied = 0, free = 255
   cv::Mat radar_intensity_image;
   grid_map::GridMapCvConverter::toImage<unsigned char, 1>(
-      map, intensity_layer, CV_8UC1, 0.0, 1.0, radar_intensity_image);
+    map, intensity_layer, CV_8UC1, 0.0, 1.0, radar_intensity_image);
   cv::Mat binary_mask;
   cv::threshold(radar_intensity_image, binary_mask, 0, 255, cv::THRESH_BINARY_INV);
 
@@ -42,10 +48,9 @@ void computeEDTFromIntensity(grid_map::GridMap& map,
   }
 }
 
-void filterLargeBlobsFromLayer(grid_map::GridMap& map,
-                               const std::string& input_layer,
-                               const std::string& output_layer,
-                               double max_blob_area)
+void filterLargeBlobsFromLayer(
+  grid_map::GridMap & map, const std::string & input_layer, const std::string & output_layer,
+  double max_blob_area)
 {
   if (!map.exists(input_layer)) {
     throw std::runtime_error("GridMap does not contain input layer: " + input_layer);
@@ -54,7 +59,7 @@ void filterLargeBlobsFromLayer(grid_map::GridMap& map,
   // Convert input layer to binary OpenCV image
   cv::Mat input_img;
   grid_map::GridMapCvConverter::toImage<unsigned char, 1>(
-      map, input_layer, CV_8UC1, 0.0, 1.0, input_img);
+    map, input_layer, CV_8UC1, 0.0, 1.0, input_img);
 
   // Connected components analysis
   cv::Mat labels, stats, centroids;
@@ -87,4 +92,4 @@ void filterLargeBlobsFromLayer(grid_map::GridMap& map,
 
 }  // namespace grid_map_filters
 
-NS_FOOT
+}

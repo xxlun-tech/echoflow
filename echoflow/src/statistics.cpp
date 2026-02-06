@@ -1,10 +1,15 @@
 /** Copyright © 2025 Seaward Science. */
 
-#include "statistics.hpp"
+#include "echoflow/statistics.hpp"
 
-NS_HEAD
+#include <cmath>
+#include <stdexcept>
 
-namespace statistics {
+namespace echoflow
+{
+
+namespace statistics
+{
 
 float computeSequentialMean(float new_observation, float num_samples, float prior_mean)
 {
@@ -17,30 +22,25 @@ float computeSequentialMean(float new_observation, float num_samples, float prio
   return prior_mean + ((new_observation - prior_mean) / num_samples);
 }
 
-std::tuple<float, float> computeSequentialVariance(float new_observation,
-                                                   float num_samples,
-                                                   float prior_mean,
-                                                   float new_mean,
-                                                   float prior_ssdm)
+std::tuple<float, float> computeSequentialVariance(
+  float new_observation, float num_samples, float prior_mean, float new_mean, float prior_ssdm)
 {
   float new_ssdm = prior_ssdm + (new_observation - prior_mean) * (new_observation - new_mean);
 
   // Variance is only defined for n > 1 due to division by n-1
   if (num_samples < 2) {
-    return { NAN, new_ssdm };
+    return {NAN, new_ssdm};
   }
 
-  return { new_ssdm / (num_samples - 1), new_ssdm };
+  return {new_ssdm / (num_samples - 1), new_ssdm};
 }
 
-std::tuple<float, float> computeSequentialStdDev(float new_observation,
-                                                 float num_samples,
-                                                 float prior_mean,
-                                                 float new_mean,
-                                                 float prior_ssdm)
+std::tuple<float, float> computeSequentialStdDev(
+  float new_observation, float num_samples, float prior_mean, float new_mean, float prior_ssdm)
 {
-  auto [variance, ssdm] = computeSequentialVariance(new_observation, num_samples, prior_mean, new_mean, prior_ssdm);
-  return { sqrt(variance), ssdm };
+  auto [variance, ssdm] =
+    computeSequentialVariance(new_observation, num_samples, prior_mean, new_mean, prior_ssdm);
+  return {sqrt(variance), ssdm};
 }
 
 float computeCircularMean(float sines_sum, float cosines_sum)
@@ -70,4 +70,4 @@ float computeMeanResultantLength(float sines_sum, float cosines_sum, float num_s
 
 }  // namespace statistics
 
-NS_FOOT
+}

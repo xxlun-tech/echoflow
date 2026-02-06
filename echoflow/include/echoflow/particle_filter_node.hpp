@@ -2,35 +2,31 @@
 
 #pragma once
 
-#include <cmath>
-#include <memory>
-#include <string>
-#include <vector>
-#include <geometry_msgs/msg/point.hpp>
-#include <geometry_msgs/msg/pose.hpp>
+#include "particle_filter.hpp"
+
+#include <rclcpp/rclcpp.hpp>
+
 #include <geometry_msgs/msg/pose_array.hpp>
 #include <geometry_msgs/msg/quaternion.hpp>
 #include <grid_map_msgs/msg/grid_map.hpp>
-#include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
-#include <sensor_msgs/point_cloud2_iterator.hpp>
-#include <visualization_msgs/msg/marker_array.hpp>
-#include <visualization_msgs/msg/marker.hpp>
-#include "grid_map_filters.hpp"
-#include "particle_filter.hpp"
-#include "statistics.hpp"
 
-NS_HEAD
+#include <memory>
+#include <string>
+
+namespace echoflow
+{
 
 /**
  * @brief Node that uses a particle filter to track targets in a 2D grid map of marine radar data.
  *
- * This node shares a pointer to a grid map with the radar_grid_map_node and spawns particles on areas
- * of the map with valid radar returns in order to track the position and course of moving radar targets.
+ * This node shares a pointer to a grid map with the radar_grid_map_node and spawns particles on
+ * areas of the map with valid radar returns in order to track the position and course of moving
+ * radar targets.
  *
- * The node publishes a pointcloud of particles and a grid map with aggregated statistics on the particles
- * (number of particles per cell, mean and standard deviation of particle age, x-position, y-position,
- * course and velocity).
+ * The node publishes a pointcloud of particles and a grid map with aggregated statistics on the
+ * particles (number of particles per cell, mean and standard deviation of particle age, x-position,
+ * y-position, course and velocity).
  */
 class ParticleFilterNode : public rclcpp::Node
 {
@@ -40,15 +36,18 @@ public:
    */
   ParticleFilterNode();
 
+  virtual ~ParticleFilterNode() = default;
+
   /**
    * @brief All configurable parameters for the particle filter node.
    */
   struct Parameters
   {
-  /**
-   * @brief Parameters controlling the behavior of the particle filter.
-   */
-    struct {
+    /**
+     * @brief Parameters controlling the behavior of the particle filter.
+     */
+    struct
+    {
       /**
        * @brief Total number of particles used in the filter.
        */
@@ -78,7 +77,8 @@ public:
       double weight_decay_half_life = 3.0;
 
       /**
-       * @brief Fraction of particles (per second) that are reseeded with random poses on each resample step.
+       * @brief Fraction of particles (per second) that are reseeded with random poses on each
+       * resample step.
        *
        * Increase this value to more quickly lock on to newly detected targets.
        */
@@ -112,25 +112,26 @@ public:
       double maximum_target_size = 200.0;
 
       /**
-   * @brief Density (particles/m²) at which the weight of a particle will be reduced by half.
-   *
-   * Lower this value if particles cluster too aggressively on single targets.
-   */
+       * @brief Density (particles/m²) at which the weight of a particle will be reduced by half.
+       *
+       * Lower this value if particles cluster too aggressively on single targets.
+       */
       double density_feedback_factor = 0.8;
     } particle_filter;
-
 
     /**
      * @brief Parameters defining the statistical grid map used for monitoring particle behavior.
      */
-    struct {
-      std::string frame_id = "map";   //!< Coordinate frame in which the particle statistics map is published.
-      double length = 2500.0;         //!< Length (in meters) of the grid map.
-      double width = 2500.0;          //!< Width (in meters) of the grid map.
-      double resolution = 25.0;       //!< Resolution of each grid cell (in meters).
-      double pub_interval = 0.5;      //!< Time interval (in seconds) between publishing the statistics map.
+    struct
+    {
+      std::string frame_id =
+        "map";  //!< Coordinate frame in which the particle statistics map is published.
+      double length = 2500.0;    //!< Length (in meters) of the grid map.
+      double width = 2500.0;     //!< Width (in meters) of the grid map.
+      double resolution = 25.0;  //!< Resolution of each grid cell (in meters).
+      double pub_interval =
+        0.5;  //!< Time interval (in seconds) between publishing the statistics map.
     } particle_filter_statistics;
-
 
     /**
      * @brief Declares all node parameters.
@@ -147,10 +148,11 @@ public:
     void update(rclcpp::Node * node);
   };
 
-  std::shared_ptr<grid_map::GridMap> map_ptr_;  //!< Shared pointer to the underlying grid map of radar intensity & EDT layers.
+  std::shared_ptr<grid_map::GridMap>
+    map_ptr_;  //!< Shared pointer to the underlying grid map of radar intensity & EDT layers.
 
 protected:
-  Parameters parameters_;     //!< Runtime parameters.
+  Parameters parameters_;  //!< Runtime parameters.
 
 private:
   /**
@@ -187,7 +189,7 @@ private:
    * Publishes: grid_map_msgs::msg::GridMap topic containing particle filter statistics as
    * layers in a grid map.
    */
-   void computeParticleFilterStatistics();
+  void computeParticleFilterStatistics();
 
   /**
    * @brief Convert particles to a pointcloud and publish.
@@ -205,8 +207,8 @@ private:
   void publishParticleVectorField();
 
   /**
-   * @brief Store mean cell x/y position and course angle in a pose array and publish. Function can be
-   * visualized in rviz2 as a PoseArray showing mean cell course angles as a vector.
+   * @brief Store mean cell x/y position and course angle in a pose array and publish. Function can
+   * be visualized in rviz2 as a PoseArray showing mean cell course angles as a vector.
    *
    * Publishes: geometry_msgs::msg::PoseArray topic of mean cell x/y positions and mean course.
    */
@@ -221,25 +223,37 @@ private:
    */
   geometry_msgs::msg::Quaternion angleToYawQuaternion(float angle);
 
-  std::unique_ptr<MultiTargetParticleFilter> pf_; //!< Pointer to the multi-target particle filter instance.
-  std::shared_ptr<grid_map::GridMap> pf_statistics_; //!< Pointer to the grid map containing particle filter statistics.
+  std::unique_ptr<MultiTargetParticleFilter>
+    pf_;  //!< Pointer to the multi-target particle filter instance.
+  std::shared_ptr<grid_map::GridMap>
+    pf_statistics_;  //!< Pointer to the grid map containing particle filter statistics.
 
-  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr cloud_pub_; //!< Publisher for the particle point cloud.
-  rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr cell_vector_field_pub_; //!< Publisher for the mean cell vector field.
-  rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr particle_vector_field_pub_; //!< Publisher for the particle vector field.
-  rclcpp::Publisher<grid_map_msgs::msg::GridMap>::SharedPtr pf_statistics_pub_; //!< Publisher for the particle filter statistics grid map.
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr
+    cloud_pub_;  //!< Publisher for the particle point cloud.
+  rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr
+    cell_vector_field_pub_;  //!< Publisher for the mean cell vector field.
+  rclcpp::Publisher<geometry_msgs::msg::PoseArray>::SharedPtr
+    particle_vector_field_pub_;  //!< Publisher for the particle vector field.
+  rclcpp::Publisher<grid_map_msgs::msg::GridMap>::SharedPtr
+    pf_statistics_pub_;  //!< Publisher for the particle filter statistics grid map.
 
-  rclcpp::TimerBase::SharedPtr timer_; //!< Timer for the particle filter update function.
-  rclcpp::TimerBase::SharedPtr pf_statistics_timer_; //!< Timer for computing and publishing particle filter statistics.
+  rclcpp::TimerBase::SharedPtr timer_;  //!< Timer for the particle filter update function.
+  rclcpp::TimerBase::SharedPtr
+    pf_statistics_timer_;  //!< Timer for computing and publishing particle filter statistics.
 
-  rclcpp::Node::OnSetParametersCallbackHandle::SharedPtr parameters_on_set_callback_; //!< Callback triggered *before* parameters are applied to the node.
+  rclcpp::Node::OnSetParametersCallbackHandle::SharedPtr
+    parameters_on_set_callback_;  //!< Callback triggered *before* parameters are applied to the
+                                  //!< node.
 
-  std::shared_ptr<rclcpp::ParameterEventHandler> parameter_event_handler_; //!< Parameter event handler for listening to parameter changes.
+  std::shared_ptr<rclcpp::ParameterEventHandler>
+    parameter_event_handler_;  //!< Parameter event handler for listening to parameter changes.
 
-  rclcpp::ParameterEventCallbackHandle::SharedPtr parameter_event_callback_handle_; //!< Callback triggered *after* parameter changes have been successfully applied to the node.
+  rclcpp::ParameterEventCallbackHandle::SharedPtr
+    parameter_event_callback_handle_;  //!< Callback triggered *after* parameter changes have been
+                                       //!< successfully applied to the node.
 
-  bool initialized_ = false; //!< Flag indicating whether the particle filter has been initialized.
-  rclcpp::Time last_update_time_; //!< Timestamp of the last particle filter update.
+  bool initialized_ = false;  //!< Flag indicating whether the particle filter has been initialized.
+  rclcpp::Time last_update_time_;  //!< Timestamp of the last particle filter update.
 };
 
-NS_FOOT
+}

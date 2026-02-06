@@ -1,7 +1,7 @@
 /** Copyright © 2025 Seaward Science. */
 
-#include "particle_filter_node.hpp"
-#include "radar_grid_map_node.hpp"
+#include "echoflow/particle_filter_node.hpp"
+#include "echoflow/radar_grid_map_node.hpp"
 
 int main(int argc, char **argv)
 {

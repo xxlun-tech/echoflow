@@ -1,39 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-
-################################
-##  CONFIGURE THIS FILE HERE  ##
-################################
-
-set(ROS_DEPENDS
-  ament_cmake
-  grid_map_core
-  grid_map_cv
-  grid_map_ros
-  grid_map_msgs
-  grid_map_costmap_2d
-  marine_sensor_msgs
-  rclcpp
-  sensor_msgs
-  std_msgs
-  tf2
-  tf2_ros
-  tf2_geometry_msgs
-  geometry_msgs
-)
-
-set(EXTERNAL_DEPENDS
-  Eigen3
-)
-
-set(EXTERNAL_DEPENDS_LIB
-)
-
-get_filename_component(PACKAGE_NAME ${CMAKE_CURRENT_SOURCE_DIR} NAME)
-message("Creating Package: ${PACKAGE_NAME}")
-project(${PACKAGE_NAME})  ## this package name is the name of the directory this cmake file is in
-
-
-add_compile_definitions(CMAKE_PACKAGE_NAME=${PACKAGE_NAME})
+project(echoflow)
 
 # Default to C++17 for humble
 if(NOT CMAKE_CXX_STANDARD)
@@ -44,93 +10,77 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-###
-###  Add dependencies
-###
-
-foreach(DEPEND ${ROS_DEPENDS} ${EXTERNAL_DEPENDS})
-  find_package(${DEPEND} REQUIRED)
-endforeach(DEPEND)
-
-
-################
-## Find files ##
-################
-
-file(GLOB HDRS CONFIGURE_DEPENDS
-  "include/${PROJECT_NAME}/*.h"
-)
-file(GLOB SRCS CONFIGURE_DEPENDS
-  "src/*.cpp"
-  "src/*.hpp"
-)
-file(GLOB NODES CONFIGURE_DEPENDS
-  "nodes/*.cpp"
-)
+find_package(ament_cmake REQUIRED)
+find_package(rclcpp REQUIRED)
+find_package(marine_sensor_msgs REQUIRED)
+find_package(sensor_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
+find_package(geometry_msgs REQUIRED)
+find_package(grid_map_core REQUIRED)
+find_package(grid_map_cv REQUIRED)
+find_package(grid_map_ros REQUIRED)
+find_package(grid_map_msgs REQUIRED)
+find_package(tf2 REQUIRED)
+find_package(tf2_ros REQUIRED)
 
 include_directories(
   include
 )
 
-###########
-## Build ##
-###########
+add_executable(radar_grid_map
+  src/radar_grid_map_node.cpp
+  src/radar_grid_map.cpp
+)
+ament_target_dependencies(radar_grid_map
+  rclcpp
+  marine_sensor_msgs
+  nav_msgs
+  geometry_msgs
+  grid_map_core
+  grid_map_ros
+  grid_map_msgs
+  tf2
+  tf2_ros
+)
 
-set(EXECUTABLES "")  # for installing later
+add_executable(flow_tracker
+  src/radar_grid_map_node.cpp
+  src/grid_map_filters.cpp
+  src/particle_filter.cpp
+  src/particle_filter_node.cpp
+  src/statistics.cpp
+  src/flow_tracker.cpp
+)
+ament_target_dependencies(flow_tracker
+  rclcpp
+  marine_sensor_msgs
+  sensor_msgs
+  grid_map_core
+  grid_map_cv
+  grid_map_ros
+  grid_map_msgs
+  tf2_ros
+)
 
-message("buliding ${PROJECT_NAME} node: ")
-
-foreach(NODE_FILE ${NODES})
-  get_filename_component(NODE_NAME ${NODE_FILE} NAME_WE)
-  message("  - " ${NODE_NAME})
-  list(APPEND EXECUTABLES ${NODE_NAME})
-  add_executable(${NODE_NAME} ${NODE_FILE} ${HDRS} ${SRCS})
-  ament_target_dependencies(${NODE_NAME} ${ROS_DEPENDS} ${EXTERNAL_DEPENDS_LIB})
-  target_include_directories(${NODE_NAME} PRIVATE "include/${PROJECT_NAME}/")
-endforeach(NODE_FILE)
-
-
-message("  Installing: ")
-foreach(EXEC_FILE ${EXECUTABLES})
-  message("  - " ${EXEC_FILE})
-endforeach(EXEC_FILE)
 install(TARGETS
-  ${EXECUTABLES}
+  radar_grid_map
+  flow_tracker
   DESTINATION lib/${PROJECT_NAME}/
 )
+
 install(DIRECTORY
   launch
   DESTINATION share/${PROJECT_NAME}/
 )
+
 install(DIRECTORY
   config
   DESTINATION share/${PROJECT_NAME}/
 )
 
-#############
-## testing ##
-#############
-
-#if(BUILD_TESTING)
-#  find_package(ament_lint_auto REQUIRED)
-#  ament_lint_auto_find_test_dependencies()
-#endif()
-
 if(BUILD_TESTING)
-  #find_package(ament_cmake_gtest REQUIRED)
-  #ament_add_gtest(${PROJECT_NAME} test/radar_grid_map_test.cpp)
-  #ament_add_gtest(${PROJECT_NAME}
-  #  test/grid_map_filters_test.cpp
-  #  include/echoflow/grid_map_filters.hpp
-  #  src/grid_map_filters.cpp)
-  #target_include_directories(${PROJECT_NAME} PUBLIC
-  #  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  #  $<INSTALL_INTERFACE:include>
-  #)
-  #ament_target_dependencies(${PROJECT_NAME}
-  #  std_msgs
-  #)
-  #target_link_libraries(${PROJECT_NAME})
+  find_package(ament_lint_auto REQUIRED)
+  ament_lint_auto_find_test_dependencies()
 endif()
 
 ament_package()

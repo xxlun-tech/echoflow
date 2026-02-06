@@ -2,15 +2,13 @@
 
 #pragma once
 
-#include <cmath>
-#include <stdexcept>
 #include <tuple>
-#include "package_defs.hpp"
 
+namespace echoflow
+{
 
-NS_HEAD
-
-namespace statistics {
+namespace statistics
+{
 
 /**
  * @brief Compute the arithmetic mean of a sample given a new observation.
@@ -31,15 +29,15 @@ float computeSequentialMean(float new_observation, float num_samples, float prio
 /**
  * @brief Compute the variance of a sample given a new observation.
  *
- * This function uses Welford's algorithm @cite welford_1962 to compute the new variance of the sample given
- * the new observation. The following recurrence relation computes the unbiased variance of the sample for
- * \f$ n > 1\f$:
+ * This function uses Welford's algorithm @cite welford_1962 to compute the new variance of the
+ * sample given the new observation. The following recurrence relation computes the unbiased
+ * variance of the sample for \f$ n > 1\f$:
  *
  * \f$ s^2_n = s^2_{n-1} + \frac{(x_n - \overline{x}_{n-1})^2}{n} - \frac{s^2_{n-1}}{n-1}\f$
  *
  * Directly using this formula can be numerically unstable, so following Welford's algorithm the
- * sum of squares of deviation from current mean, \f$ M_{2,n} = \sum_\limits{i=1}^{n} (x_i - \overline{x}_n)^2 \f$
- * is used to update the variance:
+ * sum of squares of deviation from current mean, \f$ M_{2,n} = \sum_\limits{i=1}^{n} (x_i -
+ * \overline{x}_n)^2 \f$ is used to update the variance:
  *
  * \f$ M_{2,n} = M_{2,n-1} + (x_n - \overline{x}_{n-1})(x_n - \overline{x}_n) \f$
  *
@@ -51,50 +49,49 @@ float computeSequentialMean(float new_observation, float num_samples, float prio
  * @param new_observation New value with which to update the variance.
  * @param num_samples Total number of samples (including current new observation).
  * @param prior_mean Prior mean of the sample data (without new observation).
- * @param new_mean New mean of sample including current observation (computeSequentialMean() should be used to
- *                 compute the mean of the sample with the current observation before computing the variance).
+ * @param new_mean New mean of sample including current observation (computeSequentialMean() should
+ * be used to compute the mean of the sample with the current observation before computing the
+ * variance).
  * @param prior_ssdm Prior sum of squared deviations from the mean (without new observation).
  * @return Variance of sample with new observation, new sum of squared deviations from the mean.
  */
-std::tuple<float, float> computeSequentialVariance(float new_observation,
-                                                   float num_samples,
-                                                   float prior_mean,
-                                                   float new_mean,
-                                                   float prior_ssdm);
+std::tuple<float, float> computeSequentialVariance(
+  float new_observation, float num_samples, float prior_mean, float new_mean, float prior_ssdm);
 
 /**
  * @brief Compute the standard deviation of a sample given a new observation.
  *
- * Computes the square root of the variance. See the documentation for the \ref computeSequentialVariance()
- * function for details on how the variance is computed.
+ * Computes the square root of the variance. See the documentation for the \ref
+ * computeSequentialVariance() function for details on how the variance is computed.
  *
- * Returns both standard deviation and the updated sum of squares of deviation from the mean \f$ M_{2,n} \f$.
+ * Returns both standard deviation and the updated sum of squares of deviation from the mean \f$
+ * M_{2,n} \f$.
  *
  * @param new_observation New value with which to update the standard deviation.
  * @param num_samples Total number of samples (including current new observation).
  * @param prior_mean Prior mean of the sample data (without new observation).
- * @param new_mean New mean of sample including current observation (computeSequentialMean() should be used to
- *                 compute the mean of the sample with the current observation before computing the standard deviation).
- * @param prior_ssdm Prior sum of squared deviations from the mean (without new observation) used to compute variance.
- * @return Standard deviation of sample with new observation, new sum of squared deviations from the mean.
+ * @param new_mean New mean of sample including current observation (computeSequentialMean() should
+ * be used to compute the mean of the sample with the current observation before computing the
+ * standard deviation).
+ * @param prior_ssdm Prior sum of squared deviations from the mean (without new observation) used to
+ * compute variance.
+ * @return Standard deviation of sample with new observation, new sum of squared deviations from the
+ * mean.
  */
-std::tuple<float, float> computeSequentialStdDev(float new_observation,
-                                                 float num_samples,
-                                                 float prior_mean,
-                                                 float new_mean,
-                                                 float prior_ssdm);
+std::tuple<float, float> computeSequentialStdDev(
+  float new_observation, float num_samples, float prior_mean, float new_mean, float prior_ssdm);
 
 /**
  * @brief Compute the circular mean angle of a sample of angle data.
  *
- * Given \f$n\f$ angles \f$\alpha_1, ..., \alpha_n\f$ measured in radians, their circular mean is defined as
- * (from @cite Mardia_1972, section 2.2.2):
+ * Given \f$n\f$ angles \f$\alpha_1, ..., \alpha_n\f$ measured in radians, their circular mean is
+ * defined as (from @cite Mardia_1972, section 2.2.2):
  *
  * \f$\overline{\alpha} = \textrm{arg}\biggl(\sum_\limits{j=1}^{n} e^{i\cdot\alpha_j} \biggr)\f$
  *
- * In order to store the Cartesian coordinates of each angle as a real float without an imaginary component,
- * we instead use the arctan2 formulation to compute the mean resultant angle back to polar coordinates for
- * to obtain the mean angle, as follows:
+ * In order to store the Cartesian coordinates of each angle as a real float without an imaginary
+ * component, we instead use the arctan2 formulation to compute the mean resultant angle back to
+ * polar coordinates for to obtain the mean angle, as follows:
  *
  * \f$\overline{\alpha} = \textrm{atan2}\biggl(\sum\limits_{j=1}^{n} \sin \alpha_j,
  *                                             \sum_\limits{j=1}^{n} \cos \alpha_j \biggr)\f$
@@ -107,8 +104,8 @@ float computeCircularMean(float sines_sum, float cosines_sum);
 /**
  * @brief Compute the circular variance of a sample of angle data.
  *
- * Given \f$n\f$ angles \f$\alpha_1, ..., \alpha_n\f$ measured in radians, their circular variance \f$S_0\f$ is
- * defined as (from @cite Mardia_1972, section 2.3):
+ * Given \f$n\f$ angles \f$\alpha_1, ..., \alpha_n\f$ measured in radians, their circular variance
+ * \f$S_0\f$ is defined as (from @cite Mardia_1972, section 2.3):
  *
  * \f$ S_0 = 1 - \overline{R} \f$
  *
@@ -125,8 +122,8 @@ float computeCircularVariance(float sines_sum, float cosines_sum, float num_samp
 /**
  * @brief Compute the circular standard deviation of a sample of angle data.
  *
- * Given \f$n\f$ angles \f$\alpha_1, ..., \alpha_n\f$ measured in radians, their circular standard deviation
- * is defined as (from @cite Mardia_1972, section 2.3.4, Eq. 2.3.14):
+ * Given \f$n\f$ angles \f$\alpha_1, ..., \alpha_n\f$ measured in radians, their circular standard
+ * deviation is defined as (from @cite Mardia_1972, section 2.3.4, Eq. 2.3.14):
  *
  * \f$ s_0 = \sqrt{-2.0 * \log(\overline{R})} \f$,
  *
@@ -143,8 +140,8 @@ float computeCircularStdDev(float sines_sum, float cosines_sum, float num_sample
 /**
  * @brief Compute the mean resultant length of a sample of angle data.
  *
- * Given \f$n\f$ angles \f$\alpha_1, ..., \alpha_n\f$ measured in radians, their mean resultant length
- * is defined as (from @cite Mardia_1972):
+ * Given \f$n\f$ angles \f$\alpha_1, ..., \alpha_n\f$ measured in radians, their mean resultant
+ * length is defined as (from @cite Mardia_1972):
  *
  * \f$\overline{R} = \sqrt{\overline{C}^2 + \overline{S}^2} \f$,
  *
@@ -160,4 +157,4 @@ float computeMeanResultantLength(float sines_sum, float cosines_sum, float num_s
 
 }  // namespace statistics
 
-NS_FOOT
+}
